@@ -8,7 +8,7 @@ import RiskCard from "@/components/risk-card";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CheckCircle, ShieldCheck } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/toast";
 
 export default function ReviewWorkspace() {
   const params = useParams();
@@ -19,7 +19,6 @@ export default function ReviewWorkspace() {
   const [showApprovalModal, setShowApprovalModal] = useState(false);
 
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const { data, isLoading } = useQuery({
     queryKey: ["document", documentId],

@@ -6,14 +6,13 @@ import { RiskFlag, overrideRiskFlag } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/toast";
 
 export default function RiskCard({ flag }: { flag: RiskFlag }) {
   const [reason, setReason] = useState("");
   const [showOverrideMenu, setShowOverrideMenu] = useState(false);
   
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const mutation = useMutation({
     mutationFn: (status: string) => overrideRiskFlag(flag.id, status, reason),

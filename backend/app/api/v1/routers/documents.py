@@ -117,13 +117,16 @@ async def upload_document(
             
             await db.commit()
         
+        err = getattr(structured_intelligence, "_extraction_error", None)
         return {
             "data": {
                 "id": str(doc.id),
                 "file_metadata": {
                     "filename": file.filename,
                     "pages": extracted_data.total_pages,
-                    "is_scanned": extracted_data.needs_ocr_fallback
+                    "is_scanned": extracted_data.needs_ocr_fallback,
+                    "blocks_count": len(extracted_data.blocks),
+                    "clauses_extracted": len(structured_intelligence.key_clauses) if hasattr(structured_intelligence, "key_clauses") else 0
                 },
                 # Dump the Pydantic model to a JSON dictionary
                 "extracted_intelligence": structured_intelligence.model_dump() 
@@ -132,7 +135,7 @@ async def upload_document(
                 "file_hash": file_hash,
                 "status": "analysis_complete"
             },
-            "error": None
+            "error": err
         }
         
     except ValueError as ve:

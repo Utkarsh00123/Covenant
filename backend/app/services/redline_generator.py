@@ -8,7 +8,6 @@ from app.models.clause import RiskFlag
 from tenacity import retry, wait_exponential, stop_after_attempt
 
 logger = structlog.get_logger(__name__)
-client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 REDLINE_SYSTEM_PROMPT = """
 You are an expert commercial attorney. Your task is to rewrite a risky contractual clause to make it commercially reasonable and safe for your client.
@@ -25,6 +24,7 @@ async def generate_redline_for_flag(flag: RiskFlag) -> RiskFlag:
     Takes a RiskFlag, queries Gemini 3.8 Flash to generate a redline, computes the diff, 
     and attaches the data back to the flag object.
     """
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
     logger.info("generating_redline", flag_id=str(flag.id), severity=flag.severity)
     
     # Construct the highly specific user prompt

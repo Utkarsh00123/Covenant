@@ -12,9 +12,6 @@ from app.schemas.extraction import ExtractedDocument
 
 logger = structlog.get_logger(__name__)
 
-# Initialize the native Google GenAI client
-client = genai.Client(api_key=settings.GEMINI_API_KEY)
-
 # Define our system prompts
 CONTRACT_SYSTEM_PROMPT = """
 You are a rigorous, highly accurate legal extraction engine.
@@ -63,24 +60,28 @@ async def extract_structured_data(
     system_prompt = INVOICE_SYSTEM_PROMPT if is_invoice else CONTRACT_SYSTEM_PROMPT
     model_choice = "gemini-3.5-flash-lite"
 
+    # Initialize client dynamically within the active event loop
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+
     # Default fallback models in case of unrecoverable upstream failures
-    def create_fallback():
-        if is_invoice:
-            return InvoiceAnalysis(
-                vendor_name="Unidentified Vendor",
-                subtotal=0.0,
-                tax_amount=0.0,
-                total_amount=0.0,
-                line_items=[]
-            )
-        return ContractAnalysis(parties=[], key_clauses=[])
+    def create_fallback(err_detail: str = "empty_or_failed"):
+        fallback = InvoiceAnalysis(
+            vendor_name="Unidentified Vendor",
+            subtotal=0.0,
+            tax_amount=0.0,
+            total_amount=0.0,
+            line_items=[]
+        ) if is_invoice else ContractAnalysis(parties=[], key_clauses=[])
+        setattr(fallback, "_extraction_error", err_detail)
+        return fallback
 
     # If document has virtually no extracted text, return clean default model directly
     if not full_text.strip():
         logger.warning("empty_document_text_detected, returning default extraction")
-        return create_fallback()
+        return create_fallback("empty_document_text")
 
     response = None
+    last_err_msg = ""
     # Retry once on temporary 503 high-demand spikes
     for attempt in range(2):
         try:
@@ -96,13 +97,14 @@ async def extract_structured_data(
             )
             break
         except Exception as e:
-            logger.warning("gemini_call_attempt_failed", attempt=attempt + 1, error=str(e))
+            last_err_msg = f"{type(e).__name__}: {str(e)}"
+            logger.warning("gemini_call_attempt_failed", attempt=attempt + 1, error=last_err_msg)
             if attempt == 1:
-                logger.error("all_gemini_attempts_exhausted", error=str(e))
-                return create_fallback()
+                logger.error("all_gemini_attempts_exhausted", error=last_err_msg)
+                return create_fallback(last_err_msg)
 
     if not response:
-        return create_fallback()
+        return create_fallback(last_err_msg or "no_response_from_gemini")
 
     # 1. Check if native parsed model is available
     try:

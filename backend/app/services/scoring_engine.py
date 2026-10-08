@@ -13,7 +13,6 @@ from app.services.redline_generator import generate_redline_for_flag
 from app.models.clause import RiskFlag, ExtractedClause
 
 logger = structlog.get_logger(__name__)
-client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 deviation_schema = {
     "type": "OBJECT",
@@ -48,6 +47,7 @@ async def evaluate_clause_risk(
     3. Evaluates semantic deviation with Gemini 3.5 Flash Lite if no deterministic rules fire.
     4. Concurrently triggers surgical redline generation for all flagged risks.
     """
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
     generated_flags: list[RiskFlag] = []
     
     doc_uuid = uuid.UUID(str(document_id)) if not isinstance(document_id, uuid.UUID) else document_id

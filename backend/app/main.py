@@ -21,7 +21,7 @@ def get_application() -> FastAPI:
     ]
     
     # Replace this placeholder with your ACTUAL Vercel URL
-    production_url = os.getenv("FRONTEND_PROD_URL", "https://covenant-orcin-beta.vercel.app/")
+    production_url = os.getenv("FRONTEND_PROD_URL", "https://covenant-orcin-beta.vercel.app").rstrip("/")
     
     # Check both the OS environment and your settings file to ensure it triggers correctly
     if os.getenv("ENVIRONMENT") == "production" or getattr(settings, "ENVIRONMENT", "") == "production":

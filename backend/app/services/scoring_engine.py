@@ -171,6 +171,13 @@ async def evaluate_clause_risk(
 
         except Exception as e:
             logger.error("gemini_deviation_analysis_failed", error=str(e), category=extracted_clause.category)
+            err_lower = str(e).lower()
+            if "429" in err_lower or "resource_exhausted" in err_lower or "quota" in err_lower:
+                from fastapi import HTTPException
+                raise HTTPException(
+                    status_code=429,
+                    detail="Google Gemini API Quota Exhausted (Error 429: RESOURCE_EXHAUSTED). You have exceeded your free tier daily quota for gemini-3.5-flash-lite (500 requests/day). Please retry when your quota resets."
+                )
             # Safe fallback: if similarity is significantly different from baseline (<0.85), flag for review
             if similarity_score and similarity_score < 0.85:
                 generated_flags.append(

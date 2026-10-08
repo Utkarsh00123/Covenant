@@ -110,8 +110,18 @@ async def upload_document(
                         for flag in flags:
                             db.add(flag)
                         logger.info("clause_flags_persisted", clause_id=str(extracted_orm.id), count=len(flags))
+                    except HTTPException:
+                        raise
                     except Exception as flag_err:
                         logger.error("risk_evaluation_skipped", clause_id=str(extracted_orm.id), error=str(flag_err))
+                        err_str = str(flag_err).lower()
+                        if "429" in err_str or "resource_exhausted" in err_str or "quota" in err_str:
+                            raise HTTPException(
+                                status_code=429,
+                                detail="Google Gemini API Quota Exhausted (429 RESOURCE_EXHAUSTED). You have exceeded your free tier daily quota for gemini-3.5-flash-lite (500 requests/day). Please retry when your quota resets."
+                            )
+                except HTTPException:
+                    raise
                 except Exception as clause_err:
                     logger.error("clause_persistence_skipped", error=str(clause_err))
             
@@ -138,10 +148,18 @@ async def upload_document(
             "error": err
         }
         
+    except HTTPException:
+        raise
     except ValueError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
         logger.error("pipeline_failed", error=str(e))
+        err_lower = str(e).lower()
+        if "429" in err_lower or "resource_exhausted" in err_lower or "quota" in err_lower:
+            raise HTTPException(
+                status_code=429,
+                detail="Google Gemini API Quota Exhausted (429 RESOURCE_EXHAUSTED). You have exceeded your free tier daily quota for gemini-3.5-flash-lite (500 requests/day). Please retry when your quota resets."
+            )
         raise HTTPException(status_code=500, detail="Failed to process document.")
 
 @router.get("/{document_id}/download")

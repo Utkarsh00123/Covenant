@@ -9,32 +9,52 @@ import { Button } from "@/components/ui/button";
 import { UploadCloud, FileText } from "lucide-react";
 // Make sure this path matches where Shadcn installed your toast hook
 import { toast } from "@/components/ui/toast"; 
+import QuotaModal from "@/components/ui/quota-modal";
 
 export default function UploadModal() {
   const [open, setOpen] = useState(false);
   const [docType, setDocType] = useState("contract");
+  const [showQuotaModal, setShowQuotaModal] = useState(false);
+  const [quotaErrorDetail, setQuotaErrorDetail] = useState("");
   
   const queryClient = useQueryClient();
-
 
   // 1. Pass both file and type as a single variable object to prevent stale closures
   const mutation = useMutation({
     mutationFn: (variables: { file: File; type: string }) => 
       uploadDocument(variables.file, variables.type),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       setOpen(false);
-      toast.add({
-        title: "Upload Successful",
-        description: "Your document is now being analyzed by the AI.",
-      });
+      
+      const err = data?.error ? String(data.error) : "";
+      const isQuota = err.includes("429") || err.toLowerCase().includes("quota") || err.toLowerCase().includes("resource_exhausted");
+      
+      if (isQuota) {
+        setQuotaErrorDetail(err);
+        setShowQuotaModal(true);
+      } else {
+        toast.add({
+          title: "Upload Successful",
+          description: "Your document is now being analyzed by the AI.",
+        });
+      }
     },
     onError: (error: any) => {
-      toast.add({
-        type: "error",
-        title: "Upload Failed",
-        description: error?.response?.data?.detail || "An error occurred while communicating with the server.",
-      });
+      const detail = error?.response?.data?.detail || error?.message || "";
+      const is429 = error?.response?.status === 429 || detail.includes("429") || detail.toLowerCase().includes("quota") || detail.toLowerCase().includes("resource_exhausted");
+      
+      if (is429) {
+        setQuotaErrorDetail(detail || "429 RESOURCE_EXHAUSTED: Google Gemini API quota limit reached.");
+        setShowQuotaModal(true);
+        setOpen(false);
+      } else {
+        toast.add({
+          type: "error",
+          title: "Upload Failed",
+          description: detail || "An error occurred while communicating with the server.",
+        });
+      }
     }
   });
 
@@ -53,6 +73,7 @@ export default function UploadModal() {
   });
 
   return (
+    <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button className="gap-2" />}>
         <UploadCloud size={18} /> Upload Document
@@ -102,5 +123,11 @@ export default function UploadModal() {
         </div>
       </DialogContent>
     </Dialog>
+    <QuotaModal
+      open={showQuotaModal}
+      onClose={() => setShowQuotaModal(false)}
+      errorDetail={quotaErrorDetail}
+    />
+    </>
   );
 }

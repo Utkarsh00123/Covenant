@@ -35,6 +35,21 @@ def get_application() -> FastAPI:
         allow_headers=["*"],
     )
     
+    from fastapi.exceptions import HTTPException as StarletteHTTPException
+
+    @application.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        origin = request.headers.get("origin")
+        allowed_origin = origin if origin and (origin in origins or "vercel.app" in origin) else "https://covenant-orcin-beta.vercel.app"
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+            headers={
+                "Access-Control-Allow-Origin": allowed_origin,
+                "Access-Control-Allow-Credentials": "true",
+            }
+        )
+
     @application.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
         import structlog

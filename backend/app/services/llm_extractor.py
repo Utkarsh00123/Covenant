@@ -1,6 +1,7 @@
 import json
 import structlog
 from typing import Union
+from fastapi import HTTPException
 from pydantic import ValidationError
 from google import genai
 from google.genai import types
@@ -124,6 +125,13 @@ async def extract_structured_data(
         except Exception as e:
             last_err_msg = f"{type(e).__name__}: {str(e)}"
             logger.warning("gemini_call_attempt_failed", attempt=attempt + 1, error=last_err_msg)
+            err_lower = str(e).lower()
+            if "429" in err_lower or "resource_exhausted" in err_lower or "quota" in err_lower:
+                logger.error("gemini_quota_exhausted_during_extraction", error=last_err_msg)
+                raise HTTPException(
+                    status_code=429,
+                    detail="Google Gemini API Quota Exhausted (Error 429: RESOURCE_EXHAUSTED). You have exceeded your free tier daily quota for gemini-3.5-flash-lite (500 requests/day). Please retry when your quota resets."
+                )
             if attempt == 1:
                 logger.error("all_gemini_attempts_exhausted", error=last_err_msg)
                 return create_fallback(last_err_msg)

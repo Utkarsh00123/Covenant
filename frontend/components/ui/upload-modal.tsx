@@ -31,7 +31,7 @@ export default function UploadModal() {
     },
     onError: (error: any) => {
       toast.add({
-        variant: "destructive",
+        type: "error",
         title: "Upload Failed",
         description: error?.response?.data?.detail || "An error occurred while communicating with the server.",
       });

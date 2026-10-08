@@ -25,7 +25,7 @@ export default function RiskCard({ flag }: { flag: RiskFlag }) {
     },
     onError: (error: any) => {
       toast.add({
-        variant: "destructive",
+        type: "error",
         title: "Update Failed",
         description: error?.response?.data?.detail || "Could not record the override.",
       });
@@ -35,7 +35,7 @@ export default function RiskCard({ flag }: { flag: RiskFlag }) {
   const handleOverride = (status: string) => {
     if (reason.trim().length < 5) {
       toast.add({
-        variant: "destructive",
+        type: "error",
         title: "Reason Required",
         description: "Please provide a detailed reason (at least 5 characters) for the audit log.",
       });

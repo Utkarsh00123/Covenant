@@ -38,7 +38,7 @@ export default function ReviewWorkspace() {
     },
     onError: (error: any) => {
       toast.add({
-        variant: "destructive",
+        type: "error",
         title: "Approval Blocked",
         description: error?.response?.data?.detail || "Critical risk flags must be resolved first.",
       });

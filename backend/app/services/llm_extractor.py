@@ -41,6 +41,28 @@ def clean_json_text(raw: str) -> str:
         text = text[:-3]
     return text.strip()
 
+def dereference_schema(schema: dict) -> dict:
+    """
+    Inlines Pydantic v2 $defs and $ref references so the schema
+    strictly conforms to google.genai.types.Schema requirements.
+    """
+    defs = schema.pop("$defs", {})
+    def resolve(node):
+        if isinstance(node, dict):
+            if "$ref" in node:
+                ref_key = node["$ref"].split("/")[-1]
+                target = dict(defs.get(ref_key, {}))
+                return resolve(target)
+            if "allOf" in node and len(node["allOf"]) == 1 and "$ref" in node["allOf"][0]:
+                ref_key = node["allOf"][0]["$ref"].split("/")[-1]
+                target = dict(defs.get(ref_key, {}))
+                return resolve(target)
+            return {k: resolve(v) for k, v in node.items()}
+        elif isinstance(node, list):
+            return [resolve(x) for x in node]
+        return node
+    return resolve(schema)
+
 async def extract_structured_data(
     extracted_doc: ExtractedDocument, 
     document_type: str = "contract"
@@ -59,6 +81,9 @@ async def extract_structured_data(
     response_model = InvoiceAnalysis if is_invoice else ContractAnalysis
     system_prompt = INVOICE_SYSTEM_PROMPT if is_invoice else CONTRACT_SYSTEM_PROMPT
     model_choice = "gemini-3.5-flash-lite"
+
+    # Dereference Pydantic JSON schema to remove $defs / allOf for google.genai compliance
+    clean_schema = dereference_schema(response_model.model_json_schema())
 
     # Initialize client dynamically within the active event loop
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
@@ -91,7 +116,7 @@ async def extract_structured_data(
                 config=types.GenerateContentConfig(
                     system_instruction=system_prompt,
                     response_mime_type="application/json",
-                    response_schema=response_model,
+                    response_schema=clean_schema,
                     temperature=0.1,
                 ),
             )

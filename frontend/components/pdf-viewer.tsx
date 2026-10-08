@@ -4,8 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 
 // CRITICAL FIX: Next.js + PDF.js worker configuration.
-// Pointing directly to the CDN bypasses local Webpack worker compilation errors.
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Pointing directly to the CDN with .mjs extension bypasses local Webpack worker compilation errors.
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 export interface BoundingBox {
   x0: number; // Percentage 0-100

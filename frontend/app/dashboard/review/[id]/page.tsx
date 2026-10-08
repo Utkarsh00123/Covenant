@@ -62,7 +62,8 @@ export default function ReviewWorkspace() {
     );
   }
 
-  const pdfUrl = `http://localhost:8000/api/v1/documents/${documentId}/download`;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  const pdfUrl = `${API_URL}/documents/${documentId}/download`;
 
   // Map backend flags to PDF highlights if available, otherwise fallback
   const highlights: BoundingBox[] = data.flags.map((flag: any, index: number) => ({

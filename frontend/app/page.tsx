@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -11,8 +12,12 @@ export default function Home() {
           AI Contract & Invoice Risk Intelligence. Detect deviations, evaluate risk, and generate actionable redlines.
         </p>
         <div className="flex gap-4">
-          <Button size="lg">Upload Document</Button>
-          <Button size="lg" variant="outline">View Dashboard</Button>
+          <Link href="/dashboard">
+            <Button size="lg">Upload Document</Button>
+          </Link>
+          <Link href="/dashboard">
+            <Button size="lg" variant="outline">View Dashboard</Button>
+          </Link>
         </div>
       </div>
     </main>

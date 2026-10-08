@@ -8,7 +8,15 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
-export default function RiskCard({ flag }: { flag: RiskFlag }) {
+export default function RiskCard({
+  flag,
+  onViewInPdf,
+  isActive
+}: {
+  flag: RiskFlag;
+  onViewInPdf?: () => void;
+  isActive?: boolean;
+}) {
   const [reason, setReason] = useState("");
   const [showOverrideMenu, setShowOverrideMenu] = useState(false);
   
@@ -79,22 +87,37 @@ export default function RiskCard({ flag }: { flag: RiskFlag }) {
   }
 
   return (
-    <div className={`p-5 mb-4 border-l-4 border-y border-r border-slate-200 rounded-lg bg-white shadow-sm ${severityStyles.border}`}>
+    <div
+      id={`flag-card-${flag.id}`}
+      className={`p-5 mb-4 border-l-4 border-y border-r border-slate-200 rounded-lg bg-white shadow-sm transition-all duration-300 ${severityStyles.border} ${
+        isActive ? "ring-2 ring-blue-500 shadow-md scale-[1.01]" : ""
+      }`}
+    >
       
       {/* Header */}
-      <div className="flex justify-between items-start mb-3">
-        <div>
+      <div className="flex justify-between items-start mb-3 flex-wrap gap-2">
+        <div className="flex items-center flex-wrap gap-1.5">
           {/* Badge now inherits the heat-map colors dynamically */}
-          <Badge variant="outline" className={`mb-2 mr-2 ${severityStyles.badge}`}>
+          <Badge variant="outline" className={`${severityStyles.badge}`}>
             {flag.severity}
           </Badge>
-          <Badge variant="outline" className="mb-2">{flag.flag_type}</Badge>
+          <Badge variant="outline">{flag.flag_type}</Badge>
         </div>
-        {flag.similarity_score && (
-          <span className="text-xs font-medium text-slate-400 mt-1">
-            {Math.round(flag.similarity_score * 100)}% match
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {onViewInPdf && (
+            <button
+              onClick={onViewInPdf}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded border border-blue-200 transition cursor-pointer"
+            >
+              Locate in PDF →
+            </button>
+          )}
+          {flag.similarity_score && (
+            <span className="text-xs font-medium text-slate-400">
+              {Math.round(flag.similarity_score * 100)}% match
+            </span>
+          )}
+        </div>
       </div>
 
       <h3 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-2">

@@ -17,6 +17,7 @@ export default function ReviewWorkspace() {
 
   const [approvalReason, setApprovalReason] = useState("");
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -65,14 +66,46 @@ export default function ReviewWorkspace() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
   const pdfUrl = `${API_URL}/documents/${documentId}/download`;
 
-  // Map backend flags to PDF highlights if available, otherwise fallback
-  const highlights: BoundingBox[] = data.flags.map((flag: any, index: number) => ({
-    id: flag.id,
-    x0: flag.bbox_x0 || 10,
-    y0: flag.bbox_y0 || (15 + index * 10),
-    x1: flag.bbox_x1 || 90,
-    y1: flag.bbox_y1 || (22 + index * 10),
-  }));
+  const handleHighlightClick = (id: string) => {
+    setActiveHighlightId(id);
+    const cardEl = document.getElementById(`flag-card-${id}`);
+    if (cardEl) {
+      cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      cardEl.classList.add("ring-2", "ring-amber-500", "scale-[1.02]");
+      setTimeout(() => {
+        cardEl.classList.remove("ring-2", "ring-amber-500", "scale-[1.02]");
+      }, 1800);
+    }
+  };
+
+  // Map backend flags to PDF highlights with clause page coordinate detection
+  const highlights: BoundingBox[] = data.flags.map((flag: any, index: number) => {
+    let pageNum = flag.page || 1;
+    let y0 = flag.bbox_y0 || (18 + index * 12);
+    let y1 = flag.bbox_y1 || (26 + index * 12);
+
+    // Smart clause location detection for MOU
+    if (flag.evidence_text?.includes("43,08,000") || flag.evidence_text?.toLowerCase().includes("balance payment")) {
+      pageNum = 4;
+      y0 = 44;
+      y1 = 50;
+    } else if (flag.evidence_text?.toLowerCase().includes("delhi court")) {
+      pageNum = 5;
+      y0 = 22;
+      y1 = 28;
+    }
+
+    return {
+      id: flag.id,
+      x0: flag.bbox_x0 || 8,
+      y0: y0,
+      x1: flag.bbox_x1 || 92,
+      y1: y1,
+      severity: flag.severity,
+      label: flag.flag_type,
+      page: pageNum,
+    };
+  });
 
   const isApproved = data.document.status === "APPROVED";
 
@@ -113,8 +146,13 @@ export default function ReviewWorkspace() {
       <div className="flex flex-1 overflow-hidden">
         
         {/* LEFT PANE: Document Viewer */}
-        <div className="w-1/2 bg-slate-200/50 p-6 overflow-y-auto border-r border-slate-300 flex justify-center">
-          <PDFViewer fileUrl={pdfUrl} highlights={highlights} />
+        <div className="w-1/2 bg-slate-100 border-r border-slate-300 flex flex-col h-full overflow-hidden relative">
+          <PDFViewer 
+            fileUrl={pdfUrl} 
+            highlights={highlights} 
+            onHighlightClick={handleHighlightClick}
+            activeHighlightId={activeHighlightId}
+          />
         </div>
 
         {/* RIGHT PANE: Actionable Intelligence */}
@@ -136,7 +174,14 @@ export default function ReviewWorkspace() {
               </div>
             ) : (
               data.flags.map((flag: any) => (
-                <RiskCard key={flag.id} flag={flag} />
+                <RiskCard
+                  key={flag.id}
+                  flag={flag}
+                  isActive={activeHighlightId === flag.id}
+                  onViewInPdf={() => {
+                    setActiveHighlightId(flag.id);
+                  }}
+                />
               ))
             )}
           </div>

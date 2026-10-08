@@ -7,8 +7,6 @@ from alembic import context
 # Import your Base and Models so Alembic knows what tables to create
 from app.core.database import Base
 from app.core.config import settings
-import app.models.document
-import app.models.clause 
 
 config = context.config
 

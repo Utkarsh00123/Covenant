@@ -32,7 +32,7 @@ async def upload_document(
         file_hash = await validate_and_hash_pdf(file)
 
         await file.seek(0)
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=400, detail="Invalid PDF file.")
         
     file_bytes = await file.read()

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import List, Optional, Union, Any
+from typing import List, Optional, Any
 from enum import Enum
 
 class ClauseCategory(str, Enum):

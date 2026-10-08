@@ -1,9 +1,8 @@
-import fitz  # PyMuPDF
 import cv2
 import numpy as np
 import pytesseract
 from pdf2image import convert_from_bytes
-from typing import List, Tuple
+from typing import List
 import structlog
 
 logger = structlog.get_logger(__name__)

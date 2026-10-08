@@ -56,6 +56,11 @@ def get_application() -> FastAPI:
     application.include_router(dashboard.router, prefix=settings.API_V1_STR)
     application.include_router(workflow.router, prefix=settings.API_V1_STR)
 
+    # Convenience fallbacks without /api/v1 so local and prod frontend never 404
+    application.include_router(documents.router)
+    application.include_router(dashboard.router)
+    application.include_router(workflow.router)
+
     return application
 
 app = get_application()
@@ -64,10 +69,31 @@ app = get_application()
 @app.get("/healthz", tags=["System"])
 async def health_check():
     """
-    Root endpoint to verify the API is running securely.
+    Root endpoint to verify the API is running securely and report Gemini API key status.
     """
+    key = settings.GEMINI_API_KEY or ""
+    key_diag = {
+        "is_set": bool(key),
+        "length": len(key),
+        "prefix": key[:6] if key else "",
+        "suffix": key[-4:] if key else "",
+    }
+    gemini_diag = "untested"
+    try:
+        from google import genai
+        c = genai.Client(api_key=key)
+        resp = await c.aio.models.generate_content(
+            model="gemini-3.5-flash-lite",
+            contents="ping"
+        )
+        gemini_diag = "ok"
+    except Exception as e:
+        gemini_diag = f"error: {type(e).__name__} - {str(e)}"
+
     return {
         "status": "online",
         "environment": getattr(settings, "ENVIRONMENT", "development"),
-        "version": getattr(settings, "VERSION", "1.0.0")
+        "version": getattr(settings, "VERSION", "1.0.0"),
+        "key_diag": key_diag,
+        "gemini_diag": gemini_diag
     }

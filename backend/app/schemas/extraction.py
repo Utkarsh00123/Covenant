@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
-from typing import List, Tuple, Optional
+from pydantic import BaseModel
+from typing import List, Tuple
 
 class TextBlock(BaseModel):
     """Represents a single paragraph or block of text extracted from a PDF."""

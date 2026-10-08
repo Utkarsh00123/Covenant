@@ -12,7 +12,11 @@ engine = create_async_engine(
     echo=False, # Set to True to see raw SQL in the terminal for debugging
     pool_size=10,
     max_overflow=20,
-    pool_pre_ping=True # Checks if the connection is alive before using it
+    pool_pre_ping=True, # Checks if the connection is alive before using it
+    connect_args={
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+    }
 )
 
 # AsyncSession factory

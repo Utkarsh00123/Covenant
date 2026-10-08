@@ -5,9 +5,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1
 
 export const apiClient = axios.create({
   baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // ---------------------------------------------------------
@@ -73,12 +70,8 @@ export const uploadDocument = async (file: File, type: string) => {
   formData.append("file", file);
   formData.append("document_type", type);
   
-  // Override the global application/json header so the browser can send the PDF file
-  const { data } = await apiClient.post("/documents/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  // Axios will automatically set the correct multipart boundary for FastAPI.
+  const { data } = await apiClient.post("/documents/upload", formData);
   return data;
 };
 

@@ -41,24 +41,18 @@ async def generate_redline_for_flag(flag: RiskFlag) -> RiskFlag:
     Please provide the suggested redline edit and the plain-English explanation.
     """
     
-    models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
-    response = None
-    for model_choice in models_to_try:
-        try:
-            response = await client.aio.models.generate_content(
-                model=model_choice,
-                contents=user_prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=REDLINE_SYSTEM_PROMPT,
-                    response_mime_type="application/json",
-                    response_schema=RedlineSuggestion,
-                    temperature=0.2
-                )
+    try:
+        # We use gemini-3.8-flash for surgical text editing at massive scale
+        response = await client.aio.models.generate_content(
+            model="gemini-3.5-flash-lite",
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=REDLINE_SYSTEM_PROMPT,
+                response_mime_type="application/json",
+                response_schema=RedlineSuggestion,  # Pass the Pydantic class directly
+                temperature=0.2  # Slight creativity allowed for prose rewriting, kept low for safety
             )
-            if response and response.parsed:
-                break
-        except Exception as err:
-            logger.warning("redline_model_attempt_failed", model=model_choice, error=str(err))
+        )
         
         # The new Google GenAI SDK automatically parses the JSON into the Pydantic object
         redline_data = response.parsed

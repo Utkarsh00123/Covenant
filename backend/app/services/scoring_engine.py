@@ -126,31 +126,16 @@ async def evaluate_clause_risk(
         - "reason": A concise, 1-2 sentence legal explanation.
         """
         
-        candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
-        response = None
-        last_model_used = "gemini-2.5-flash"
-        
-        for model_choice in candidate_models:
-            try:
-                response = await client.aio.models.generate_content(
-                    model=model_choice,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        response_mime_type="application/json",
-                        response_schema=deviation_schema,
-                        temperature=0.1 
-                    )
-                )
-                if response and response.text:
-                    last_model_used = model_choice
-                    break
-            except Exception as model_err:
-                logger.warning("gemini_deviation_model_failed", model=model_choice, error=str(model_err))
-
         try:
-            if not response or not response.text:
-                raise RuntimeError("All Gemini deviation models failed or rate limited.")
-
+            response = await client.aio.models.generate_content(
+                model='gemini-3.5-flash-lite',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=deviation_schema,
+                    temperature=0.1 
+                )
+            )
             analysis = json.loads(response.text)
             has_deviation = analysis.get("has_deviation", False)
             severity = analysis.get("severity", "LOW")
@@ -161,8 +146,7 @@ async def evaluate_clause_risk(
                 has_deviation=has_deviation,
                 severity=severity,
                 reason=reason,
-                similarity_score=similarity_score,
-                model=last_model_used
+                similarity_score=similarity_score
             )
 
             if has_deviation and severity != "LOW":
@@ -174,7 +158,7 @@ async def evaluate_clause_risk(
                     severity=severity,
                     flag_reason=reason,
                     similarity_score=similarity_score,
-                    ai_model_version=last_model_used,
+                    ai_model_version="gemini-3.5-flash-lite",
                     evidence_text=extracted_clause.raw_text,
                     baseline_text=match_data["standard_text"]
                 )
@@ -187,8 +171,8 @@ async def evaluate_clause_risk(
 
         except Exception as e:
             logger.error("gemini_deviation_analysis_failed", error=str(e), category=extracted_clause.category)
-            # Robust fallback: if similarity deviates from 1.0 (perfect match), flag as potential deviation
-            if similarity_score and similarity_score < 0.95:
+            # Safe fallback: if similarity is significantly different from baseline (<0.85), flag for review
+            if similarity_score and similarity_score < 0.85:
                 generated_flags.append(
                     RiskFlag(
                         document_id=doc_uuid,
@@ -196,9 +180,9 @@ async def evaluate_clause_risk(
                         standard_clause_id=standard_clause_id,
                         flag_type="SEMANTIC_DEVIATION",
                         severity="HIGH",
-                        flag_reason=f"Semantic intent deviates from standard corporate baseline (Similarity: {similarity_score}).",
+                        flag_reason=f"Semantic intent deviates from standard corporate policy (Similarity: {similarity_score}).",
                         similarity_score=similarity_score,
-                        ai_model_version="vector-fallback",
+                        ai_model_version="gemini-embedding-001-fallback",
                         evidence_text=extracted_clause.raw_text,
                         baseline_text=match_data["standard_text"]
                     )

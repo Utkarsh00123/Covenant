@@ -21,21 +21,13 @@ export default function UploadModal() {
   const mutation = useMutation({
     mutationFn: (variables: { file: File; type: string }) => 
       uploadDocument(variables.file, variables.type),
-    onSuccess: (data: any) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       setOpen(false);
-      if (data?.error) {
-        toast.add({
-          type: "error",
-          title: "AI Analysis Warning",
-          description: `API Notice: ${data.error}`,
-        });
-      } else {
-        toast.add({
-          title: "Upload Successful",
-          description: "Your document is now being analyzed by the AI.",
-        });
-      }
+      toast.add({
+        title: "Upload Successful",
+        description: "Your document is now being analyzed by the AI.",
+      });
     },
     onError: (error: any) => {
       toast.add({

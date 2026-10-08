@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     # Database Configuration
     DATABASE_URL: str
     
-    # OpenAI Configuration
-    OPENAI_API_KEY: str
+    # Geminiapi Configuration
+    GEMINI_API_KEY: str
     
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 20

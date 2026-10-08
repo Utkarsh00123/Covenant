@@ -1,0 +1,43 @@
+[
+  {
+    "category": "LIABILITY_CAP",
+    "title": "Standard 1x Liability Cap",
+    "standard_text": "In no event shall either party's aggregate liability arising out of or related to this Agreement exceed the total amounts paid by Customer to Vendor under this Agreement in the twelve (12) months preceding the initial claim. This limitation applies regardless of the legal theory of liability, except for instances of gross negligence or willful misconduct.",
+    "risk_description": "Uncapped liability exposes the company to infinite damages. A 1x trailing 12-month cap is standard commercial practice.",
+    "acceptable_ranges": {
+      "max_multiplier": 1.0,
+      "unlimited_allowed": false
+    }
+  },
+  {
+    "category": "AUTO_RENEWAL",
+    "title": "Standard 12-Month Renewal",
+    "standard_text": "Following the Initial Term, this Agreement shall automatically renew for successive periods of twelve (12) months each, unless either party provides written notice of non-renewal at least thirty (30) days prior to the expiration of the then-current term.",
+    "risk_description": "Renewal terms exceeding 12 months (e.g., 24 or 36 months) create vendor lock-in. Notice periods exceeding 90 days create a 'renewal trap'.",
+    "acceptable_ranges": {
+      "max_renewal_months": 12,
+      "min_notice_days": 30,
+      "max_notice_days": 90
+    }
+  },
+  {
+    "category": "PAYMENT_TERMS",
+    "title": "Standard Net 30",
+    "standard_text": "Customer shall pay all undisputed, properly invoiced amounts within thirty (30) days of receipt of a valid invoice. Late payments may accrue interest at a rate not to exceed 1.5% per month.",
+    "risk_description": "Payment terms less than 30 days cause cash flow strain. Late fees exceeding 1.5% monthly are predatory.",
+    "acceptable_ranges": {
+      "min_payment_days": 30,
+      "max_late_fee_percent": 1.5
+    }
+  },
+  {
+    "category": "TERMINATION_CONVENIENCE",
+    "title": "Mutual Termination for Convenience",
+    "standard_text": "Either party may terminate this Agreement for convenience and without cause at any time upon thirty (30) days prior written notice to the other party.",
+    "risk_description": "Unilateral termination rights (where only the vendor can terminate) create massive business continuity risk. Termination should be mutual.",
+    "acceptable_ranges": {
+      "requires_mutual": true,
+      "max_notice_days": 60
+    }
+  }
+]

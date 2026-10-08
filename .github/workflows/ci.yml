@@ -1,0 +1,68 @@
+name: COVENANT CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install System Dependencies for OCR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr poppler-utils libgl1 libglib2.0-0
+
+      - name: Install uv and Dependencies
+        working-directory: ./backend
+        run: |
+          pip install uv
+          uv pip install --system -r requirements.txt
+
+      - name: Run Ruff Linter
+        working-directory: ./backend
+        run: ruff check .
+
+      - name: Run Pytest Suite
+        working-directory: ./backend
+        env:
+          # We use mock keys for CI environment
+          GEMINI_API_KEY: "sk-mock-key-for-testing"
+          DATABASE_URL: "postgresql+asyncpg://postgres:mock@localhost:5432/test_db"
+        run: pytest -v
+
+  frontend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: pnpm install
+
+      - name: Run TypeScript Compiler Check
+        working-directory: ./frontend
+        run: pnpm tsc --noEmit
+
+      - name: Run ESLint
+        working-directory: ./frontend
+        run: pnpm eslint .

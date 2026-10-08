@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: covenant-api
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    plan: free # Free tier execution
+    healthCheckPath: /healthz
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false # You will enter this manually in the Render dashboard for security
+      - key: GEMINI_API_KEY
+        sync: false

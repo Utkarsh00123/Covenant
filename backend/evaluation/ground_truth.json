@@ -1,0 +1,36 @@
+{
+  "dataset_version": "1.0",
+  "documents": [
+    {
+      "filename": "synthetic_vendor_agreement_01.pdf",
+      "expected_metadata": {
+        "is_scanned": false,
+        "parties": ["Acme Corp", "Globex Inc"]
+      },
+      "expected_flags": [
+        {
+          "category": "AUTO_RENEWAL",
+          "severity": "HIGH",
+          "must_contain_text": "renew for successive periods of twenty-four (24) months",
+          "expected_baseline": "Contracts must not auto-renew for periods exceeding 12 months.",
+          "requires_redline": true
+        },
+        {
+          "category": "LIABILITY_CAP",
+          "severity": "CRITICAL",
+          "must_contain_text": "shall not exceed the sum of one hundred dollars ($100)",
+          "expected_baseline": "Liability caps must not be lower than the total contract value.",
+          "requires_redline": true
+        }
+      ]
+    },
+    {
+      "filename": "clean_standard_nda_02.pdf",
+      "expected_metadata": {
+        "is_scanned": false,
+        "parties": ["Wayne Enterprises", "Stark Industries"]
+      },
+      "expected_flags": [] 
+    }
+  ]
+}

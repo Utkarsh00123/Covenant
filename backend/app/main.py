@@ -83,7 +83,7 @@ async def health_check():
         from google import genai
         c = genai.Client(api_key=key)
         resp = await c.aio.models.generate_content(
-            model="gemini-3.5-flash-lite",
+            model="gemini-2.5-flash",
             contents="ping"
         )
         gemini_diag = "ok"

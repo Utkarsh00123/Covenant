@@ -80,7 +80,7 @@ async def extract_structured_data(
     is_invoice = (document_type.lower() == "invoice")
     response_model = InvoiceAnalysis if is_invoice else ContractAnalysis
     system_prompt = INVOICE_SYSTEM_PROMPT if is_invoice else CONTRACT_SYSTEM_PROMPT
-    model_choice = "gemini-3.5-flash-lite"
+    candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
 
     # Dereference Pydantic JSON schema to remove $defs / allOf for google.genai compliance
     clean_schema = dereference_schema(response_model.model_json_schema())
@@ -107,9 +107,11 @@ async def extract_structured_data(
 
     response = None
     last_err_msg = ""
-    # Retry once on temporary 503 high-demand spikes
-    for attempt in range(2):
+    
+    # Try models in order of priority to bypass single-model daily free quotas
+    for model_choice in candidate_models:
         try:
+            logger.info("attempting_gemini_extraction", model=model_choice)
             response = await client.aio.models.generate_content(
                 model=model_choice,
                 contents=f"Extract the structured data from the following document text:\n\n{full_text}",
@@ -120,13 +122,16 @@ async def extract_structured_data(
                     temperature=0.1,
                 ),
             )
-            break
+            if response:
+                logger.info("llm_extraction_successful", model=model_choice)
+                break
         except Exception as e:
             last_err_msg = f"{type(e).__name__}: {str(e)}"
-            logger.warning("gemini_call_attempt_failed", attempt=attempt + 1, error=last_err_msg)
-            if attempt == 1:
-                logger.error("all_gemini_attempts_exhausted", error=last_err_msg)
-                return create_fallback(last_err_msg)
+            logger.warning("gemini_model_failed_trying_next", model=model_choice, error=last_err_msg)
+
+    if not response:
+        logger.error("all_gemini_models_exhausted", error=last_err_msg)
+        return create_fallback(last_err_msg or "no_response_from_gemini")
 
     if not response:
         return create_fallback(last_err_msg or "no_response_from_gemini")

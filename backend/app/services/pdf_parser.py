@@ -56,9 +56,20 @@ async def parse_document(file_bytes: bytes, filename: str, is_invoice: bool = Fa
         if total_chars < 50:
             logger.info("scanned_page_detected", page=page_num + 1)
             needs_ocr = True
-            ocr_blocks = run_ocr_on_page(file_bytes, page_num + 1)
-            for ob in ocr_blocks:
-                blocks.append(TextBlock(**ob))
+            try:
+                ocr_blocks = run_ocr_on_page(file_bytes, page_num + 1)
+                for ob in ocr_blocks:
+                    blocks.append(TextBlock(**ob))
+            except Exception as ocr_err:
+                logger.warning("ocr_page_fallback_failed", page=page_num + 1, error=str(ocr_err))
+                raw = page.get_text().strip()
+                if raw:
+                    blocks.append(TextBlock(
+                        page_number=page_num + 1,
+                        text=raw,
+                        bbox=(0.0, 0.0, 100.0, 100.0),
+                        is_table=False
+                    ))
             continue # Skip to next page
             
         # 4. Digital Text Extraction

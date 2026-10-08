@@ -52,7 +52,7 @@ def run_ocr_on_page(page_bytes: bytes, page_num: int) -> List[dict]:
     
     page_text = []
     for i in range(len(ocr_data['text'])):
-        if int(ocr_data['conf'][i]) > 60:  # Only keep text with >60% confidence
+        if int(ocr_data['conf'][i]) > 30:  # Keep text with >30% confidence for better scanned accuracy
             text = ocr_data['text'][i].strip()
             if text:
                 page_text.append(text)

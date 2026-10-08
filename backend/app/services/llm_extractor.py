@@ -61,7 +61,7 @@ async def extract_structured_data(
     is_invoice = (document_type.lower() == "invoice")
     response_model = InvoiceAnalysis if is_invoice else ContractAnalysis
     system_prompt = INVOICE_SYSTEM_PROMPT if is_invoice else CONTRACT_SYSTEM_PROMPT
-    model_choice = "gemini-3.8-flash"
+    model_choice = "gemini-3.5-flash-lite"
 
     # Default fallback models in case of unrecoverable upstream failures
     def create_fallback():

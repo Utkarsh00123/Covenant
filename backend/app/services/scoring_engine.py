@@ -95,7 +95,7 @@ async def evaluate_clause_risk(
         
         try:
             response = await client.aio.models.generate_content(
-                model='gemini-3.8-flash',
+                model='gemini-3.5-flash-lite',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
@@ -114,13 +114,13 @@ async def evaluate_clause_risk(
                     severity=analysis.get("severity", "HIGH"),
                     flag_reason=analysis.get("reason"),
                     similarity_score=similarity_score,
-                    ai_model_version="gemini-3.8-flash",
+                    ai_model_version="gemini-3.5-flash-lite",
                     evidence_text=extracted_clause.raw_text,
                     baseline_text=match_data["standard_text"]
                 )
             )
         except Exception as e:
-            logger.error("gemini_3_8_flash_analysis_failed", error=str(e))
+            logger.error("gemini_deviation_analysis_failed", error=str(e))
             generated_flags.append(
                 RiskFlag(
                     document_id=doc_uuid,
@@ -149,10 +149,11 @@ async def evaluate_clause_risk(
         
         if redline_tasks:
             # Executes all network calls in parallel event-loop tasks
-            completed_flags = await asyncio.gather(*redline_tasks, return_exceptions=False)
+            completed_flags = await asyncio.gather(*redline_tasks, return_exceptions=True)
+            valid_flags = [f for f in completed_flags if isinstance(f, RiskFlag)]
             
             # Map updated redline flags back
-            updated_map = {f.id: f for f in completed_flags}
+            updated_map = {f.id: f for f in valid_flags}
             generated_flags = [updated_map.get(flag.id, flag) for flag in generated_flags]
         
     return generated_flags

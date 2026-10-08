@@ -44,7 +44,7 @@ async def generate_redline_for_flag(flag: RiskFlag) -> RiskFlag:
     try:
         # We use gemini-3.8-flash for surgical text editing at massive scale
         response = await client.aio.models.generate_content(
-            model="gemini-3.5-flash-lite",
+            model="gemini-3.8-flash",
             contents=user_prompt,
             config=types.GenerateContentConfig(
                 system_instruction=REDLINE_SYSTEM_PROMPT,

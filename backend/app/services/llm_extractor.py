@@ -81,7 +81,7 @@ async def extract_structured_data(
     is_invoice = (document_type.lower() == "invoice")
     response_model = InvoiceAnalysis if is_invoice else ContractAnalysis
     system_prompt = INVOICE_SYSTEM_PROMPT if is_invoice else CONTRACT_SYSTEM_PROMPT
-    model_choice = "gemini-3.5-flash-lite"
+    model_choice = "gemini-3.8-flash"
 
     # Dereference Pydantic JSON schema to remove $defs / allOf for google.genai compliance
     clean_schema = dereference_schema(response_model.model_json_schema())
@@ -130,7 +130,7 @@ async def extract_structured_data(
                 logger.error("gemini_quota_exhausted_during_extraction", error=last_err_msg)
                 raise HTTPException(
                     status_code=429,
-                    detail="Google Gemini API Quota Exhausted (Error 429: RESOURCE_EXHAUSTED). You have exceeded your free tier daily quota for gemini-3.5-flash-lite (500 requests/day). Please retry when your quota resets."
+                    detail="Google Gemini API Quota Exhausted (Error 429: RESOURCE_EXHAUSTED). You have exceeded your free tier daily quota for gemini-3.8-flash. Please retry when your quota resets."
                 )
             if attempt == 1:
                 logger.error("all_gemini_attempts_exhausted", error=last_err_msg)

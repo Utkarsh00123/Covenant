@@ -73,9 +73,12 @@ export const uploadDocument = async (file: File, type: string) => {
   formData.append("file", file);
   formData.append("document_type", type);
   
-  // Notice we removed the custom header. 
-  // Axios will automatically set the correct multipart boundary for FastAPI.
-  const { data } = await apiClient.post("/documents/upload", formData);
+  // Override the global application/json header so the browser can send the PDF file
+  const { data } = await apiClient.post("/documents/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return data;
 };
 

@@ -31,13 +31,13 @@ export default function ReviewWorkspace() {
       queryClient.invalidateQueries({ queryKey: ["document", documentId] });
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       setShowApprovalModal(false);
-      toast({
+      toast.add({
         title: "Document Approved",
         description: "The agreement is cleared for final signature and audit logged.",
       });
     },
     onError: (error: any) => {
-      toast({
+      toast.add({
         variant: "destructive",
         title: "Approval Blocked",
         description: error?.response?.data?.detail || "Critical risk flags must be resolved first.",
@@ -123,7 +123,7 @@ export default function ReviewWorkspace() {
               <h2 className="text-xl font-bold text-slate-900">AI Risk Analysis</h2>
               {data.numeric_score !== null && (
                 <span className="text-sm font-semibold px-3 py-1 bg-white border border-slate-200 rounded-full shadow-sm">
-                  Composite Risk Score: <span className={data.numeric_score > 60 ? "text-red-600" : "text-slate-800"}>{data.numeric_score}/100</span>
+                  Composite Risk Score: <span className={(data?.numeric_score ?? 0) > 60 ? "text-red-600" : "text-slate-800"}>{data.numeric_score}/100</span>
                 </span>
               )}
             </div>

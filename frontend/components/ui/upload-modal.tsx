@@ -8,14 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { UploadCloud, FileText } from "lucide-react";
 // Make sure this path matches where Shadcn installed your toast hook
-import { useToast } from "@/hooks/use-toast"; 
+import { toast } from "@/components/ui/toast"; 
 
 export default function UploadModal() {
   const [open, setOpen] = useState(false);
   const [docType, setDocType] = useState("contract");
   
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+
 
   // 1. Pass both file and type as a single variable object to prevent stale closures
   const mutation = useMutation({
@@ -24,13 +24,13 @@ export default function UploadModal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       setOpen(false);
-      toast({
+      toast.add({
         title: "Upload Successful",
         description: "Your document is now being analyzed by the AI.",
       });
     },
     onError: (error: any) => {
-      toast({
+      toast.add({
         variant: "destructive",
         title: "Upload Failed",
         description: error?.response?.data?.detail || "An error occurred while communicating with the server.",
@@ -54,10 +54,8 @@ export default function UploadModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <UploadCloud size={18} /> Upload Document
-        </Button>
+      <DialogTrigger render={<Button className="gap-2" />}>
+        <UploadCloud size={18} /> Upload Document
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

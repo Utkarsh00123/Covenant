@@ -30,7 +30,7 @@ export default function PDFViewer({ fileUrl, highlights = [], onHighlightClick }
 
   // Load the PDF binary
   useEffect(() => {
-    const loadingTask = pdfjsLib.getDocument(fileUrl);
+    const loadingTask = pdfjsLib.getDocument({ url: fileUrl });
     loadingTask.promise
       .then((pdf) => {
         setPdfDoc(pdf);

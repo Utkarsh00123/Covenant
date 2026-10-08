@@ -5,7 +5,7 @@ import { fetchDocuments } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import UploadModal from "@/components/ui/upload-modal";
+import UploadModal from "@/components/upload-modal"; // We will build this next
 
 export default function DashboardPage() {
   const router = useRouter();

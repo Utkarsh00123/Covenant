@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -13,14 +14,25 @@ def get_application() -> FastAPI:
         description="AI Contract Risk Intelligence Platform"
     )
     
-    # 3. Dynamic CORS (Fixes a FastAPI crash with wildcard credentials)
-    origins = getattr(settings, "BACKEND_CORS_ORIGINS", ["http://localhost:3000", "http://127.0.0.1:3000"])
+    # 3. Dynamic CORS (Production Hardened)
+    origins = [
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000"
+    ]
+    
+    # Replace this placeholder with your ACTUAL Vercel URL
+    production_url = os.getenv("FRONTEND_PROD_URL", "https://covenant-orcin-beta.vercel.app/")
+    
+    # Check both the OS environment and your settings file to ensure it triggers correctly
+    if os.getenv("ENVIRONMENT") == "production" or getattr(settings, "ENVIRONMENT", "") == "production":
+        origins.append(production_url)
     
     application.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["*"],
+        # Locked down from ["*"] to explicitly allowed methods
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],
     )
     

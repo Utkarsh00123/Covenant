@@ -30,6 +30,21 @@ class ExtractedClause(BaseModel):
     page_number_estimate: Optional[int] = Field(
         None, description="The estimated page number this clause appears on, if discernible from context."
     )
+    renewal_period_months: Optional[int] = Field(
+        None, description="If auto-renewal, the length of the renewal period in months (e.g. 12, 24, 36)."
+    )
+    notice_period_days: Optional[int] = Field(
+        None, description="Notice period in days required to cancel or prevent renewal (e.g. 30, 60, 90)."
+    )
+    payment_terms_days: Optional[int] = Field(
+        None, description="Payment terms in days (e.g. 30 for Net 30, 45, 60)."
+    )
+    is_liability_capped: Optional[bool] = Field(
+        None, description="Whether liability under this clause is explicitly capped."
+    )
+    is_mutual: Optional[bool] = Field(
+        None, description="Whether the obligations or rights in this clause are mutual."
+    )
 
     @field_validator("category", mode="before")
     @classmethod
@@ -82,6 +97,15 @@ class ContractAnalysis(BaseModel):
     )
     governing_law_jurisdiction: Optional[str] = Field(
         None, description="The state or country whose laws govern the agreement (e.g., 'Delaware', 'California')."
+    )
+    renewal_period_months: Optional[int] = Field(
+        None, description="Overall contract renewal term in months if specified."
+    )
+    payment_terms_days: Optional[int] = Field(
+        None, description="Standard payment terms in days (e.g. 30 for Net 30)."
+    )
+    is_liability_capped: Optional[bool] = Field(
+        None, description="Whether liability is capped across the contract."
     )
     key_clauses: List[ExtractedClause] = Field(
         default_factory=list,

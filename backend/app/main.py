@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
@@ -17,25 +18,39 @@ def get_application() -> FastAPI:
     # 3. Dynamic CORS (Production Hardened)
     origins = [
         "http://localhost:3000", 
-        "http://127.0.0.1:3000"
+        "http://127.0.0.1:3000",
+        "https://covenant-orcin-beta.vercel.app"
     ]
     
-    # Replace this placeholder with your ACTUAL Vercel URL
-    production_url = os.getenv("FRONTEND_PROD_URL", "https://covenant-orcin-beta.vercel.app").rstrip("/")
-    
-    # Check both the OS environment and your settings file to ensure it triggers correctly
-    if os.getenv("ENVIRONMENT") == "production" or getattr(settings, "ENVIRONMENT", "") == "production":
-        origins.append(production_url)
+    production_url = os.getenv("FRONTEND_PROD_URL")
+    if production_url and production_url.rstrip("/") not in origins:
+        origins.append(production_url.rstrip("/"))
     
     application.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
+        allow_origin_regex=r"https://.*\.vercel\.app",
         allow_credentials=True,
-        # Locked down from ["*"] to explicitly allowed methods
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_methods=["*"],
         allow_headers=["*"],
     )
     
+    @application.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        import structlog
+        log = structlog.get_logger(__name__)
+        log.error("unhandled_server_exception", error=str(exc), path=request.url.path)
+        origin = request.headers.get("origin")
+        allowed_origin = origin if origin and (origin in origins or "vercel.app" in origin) else "https://covenant-orcin-beta.vercel.app"
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "An internal server error occurred.", "error": str(exc)},
+            headers={
+                "Access-Control-Allow-Origin": allowed_origin,
+                "Access-Control-Allow-Credentials": "true",
+            }
+        )
+
     # 4. Register all routers under your configured API prefix
     application.include_router(documents.router, prefix=settings.API_V1_STR)
     application.include_router(dashboard.router, prefix=settings.API_V1_STR)

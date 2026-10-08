@@ -26,27 +26,34 @@ async def list_documents(
     """
     logger.info("fetching_document_list", limit=limit, offset=offset)
     
-    query = select(Document).order_by(desc(Document.created_at)).limit(limit).offset(offset)
-    result = await db.execute(query)
-    documents = result.scalars().all()
-    
-    response_list = []
-    for doc in documents:
-        # Fetch flags to determine the risk badge
-        flag_query = select(RiskFlag).where(RiskFlag.document_id == doc.id)
-        flag_result = await db.execute(flag_query)
-        flags = flag_result.scalars().all()
+    try:
+        query = select(Document).order_by(desc(Document.created_at)).limit(limit).offset(offset)
+        result = await db.execute(query)
+        documents = result.scalars().all()
         
-        risk_data = calculate_document_risk_score(flags)
-        
-        # Convert ORM model to a Pydantic dict and append calculated composite metrics
-        doc_data = DocumentListResponse.model_validate(doc).model_dump()
-        doc_data["risk_level"] = risk_data["risk_level"] if flags else "PENDING"
-        doc_data["numeric_score"] = risk_data["numeric_score"] if flags else None
-        
-        response_list.append(doc_data)
-        
-    return response_list
+        response_list = []
+        for doc in documents:
+            try:
+                flag_query = select(RiskFlag).where(RiskFlag.document_id == doc.id)
+                flag_result = await db.execute(flag_query)
+                flags = flag_result.scalars().all()
+                
+                risk_data = calculate_document_risk_score(flags)
+                
+                doc_data = DocumentListResponse.model_validate(doc).model_dump()
+                is_ready = bool(flags or doc.status == "COMPLETED")
+                doc_data["risk_level"] = risk_data["risk_level"] if is_ready else "PENDING"
+                doc_data["numeric_score"] = risk_data["numeric_score"] if is_ready else None
+                
+                response_list.append(doc_data)
+            except Exception as item_err:
+                logger.error("error_serializing_doc_item", doc_id=str(getattr(doc, "id", "")), error=str(item_err))
+                continue
+            
+        return response_list
+    except Exception as e:
+        logger.error("fetching_document_list_failed", error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to retrieve documents.")
 
 @router.get("/documents/{document_id}", response_model=DocumentDetailResponse)
 async def get_document_details(document_id: str, db: AsyncSession = Depends(get_db)):
@@ -76,13 +83,14 @@ async def get_document_details(document_id: str, db: AsyncSession = Depends(get_
     
     # Prep the nested document dictionary
     doc_data = DocumentListResponse.model_validate(document).model_dump()
-    doc_data["risk_level"] = risk_data["risk_level"] if flags else "PENDING"
-    doc_data["numeric_score"] = risk_data["numeric_score"] if flags else None
+    is_ready = bool(flags or document.status == "COMPLETED")
+    doc_data["risk_level"] = risk_data["risk_level"] if is_ready else "PENDING"
+    doc_data["numeric_score"] = risk_data["numeric_score"] if is_ready else None
     
     return {
         "document": doc_data,
-        "numeric_score": risk_data["numeric_score"] if flags else None,
-        "risk_summary": risk_data["summary"] if flags else None,
+        "numeric_score": risk_data["numeric_score"] if is_ready else None,
+        "risk_summary": risk_data["summary"] if is_ready else None,
         "extracted_intelligence": {}, # Ready for future metadata table joins
         "flags": flags # FastAPI/Pydantic automatically serializes the SQLAlchemy models
     }

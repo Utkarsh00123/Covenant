@@ -74,7 +74,7 @@ class RiskFlag(Base):
     
     # Audit Fields
     similarity_score = Column(Float, nullable=True) 
-    ai_model_version = Column(String, default="gemini-3.8-flash", nullable=True) 
+    ai_model_version = Column(String, default="gemini-3.5-flash-lite", nullable=True) 
     
     evidence_text = Column(String, nullable=False)
     baseline_text = Column(String, nullable=True)

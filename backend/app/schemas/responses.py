@@ -42,9 +42,9 @@ class DocumentListResponse(BaseModel):
     """Lightweight document representation for the main dashboard table."""
     id: UUID
     filename: str
-    document_type: str
-    status: str
-    created_at: datetime
+    document_type: Optional[str] = "contract"
+    status: Optional[str] = "PENDING"
+    created_at: Optional[datetime] = None
     
     # Composite risk metrics from calculate_document_risk_score
     risk_level: Optional[str] = "PENDING"

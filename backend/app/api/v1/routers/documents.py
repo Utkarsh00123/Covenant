@@ -3,11 +3,11 @@ import uuid
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from fastapi.responses import FileResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from app.core.database import get_db
 from app.models.document import Document
-from app.models.clause import ExtractedClause as ExtractedClauseModel
+from app.models.clause import ExtractedClause as ExtractedClauseModel, RiskFlag
 from app.services.scoring_engine import evaluate_clause_risk
 from app.utils.file_validation import validate_and_hash_pdf
 from app.services.pdf_parser import parse_document
@@ -55,6 +55,10 @@ async def upload_document(
             doc.filename = file.filename
             doc.document_type = document_type
             doc.status = "COMPLETED"
+            # Clear previous flags and clauses on re-upload to ensure fresh analysis
+            await db.execute(delete(RiskFlag).where(RiskFlag.document_id == doc.id))
+            await db.execute(delete(ExtractedClauseModel).where(ExtractedClauseModel.document_id == doc.id))
+            await db.flush()
         else:
             doc = Document(
                 id=uuid.uuid4(),
@@ -78,6 +82,8 @@ async def upload_document(
 
         # Persist clauses and evaluate risk flags if available
         if hasattr(structured_intelligence, "key_clauses") and structured_intelligence.key_clauses:
+            doc_dump = structured_intelligence.model_dump() if hasattr(structured_intelligence, "model_dump") else {}
+            logger.info("evaluating_key_clauses", count=len(structured_intelligence.key_clauses), doc_id=str(doc.id))
             for clause in structured_intelligence.key_clauses:
                 try:
                     cat_val = clause.category.value if hasattr(clause.category, "value") else str(clause.category)
@@ -91,19 +97,23 @@ async def upload_document(
                     db.add(extracted_orm)
                     await db.flush()
                     
+                    clause_dump = clause.model_dump() if hasattr(clause, "model_dump") else {}
+                    combined_structured_data = {**doc_dump, **clause_dump}
+                    
                     try:
                         flags = await evaluate_clause_risk(
                             db, 
                             doc.id, 
                             extracted_orm, 
-                            structured_intelligence.model_dump()
+                            combined_structured_data
                         )
                         for flag in flags:
                             db.add(flag)
+                        logger.info("clause_flags_persisted", clause_id=str(extracted_orm.id), count=len(flags))
                     except Exception as flag_err:
-                        logger.warning("risk_evaluation_skipped", error=str(flag_err))
+                        logger.error("risk_evaluation_skipped", clause_id=str(extracted_orm.id), error=str(flag_err))
                 except Exception as clause_err:
-                    logger.warning("clause_persistence_skipped", error=str(clause_err))
+                    logger.error("clause_persistence_skipped", error=str(clause_err))
             
             await db.commit()
         

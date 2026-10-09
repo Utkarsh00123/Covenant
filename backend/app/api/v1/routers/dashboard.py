@@ -1,3 +1,4 @@
+import os
 import uuid
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -94,3 +95,34 @@ async def get_document_details(document_id: str, db: AsyncSession = Depends(get_
         "extracted_intelligence": {}, # Ready for future metadata table joins
         "flags": flags # FastAPI/Pydantic automatically serializes the SQLAlchemy models
     }
+
+@router.delete("/documents/{document_id}")
+async def delete_document(document_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Deletes a document and cascades to its extracted clauses, risk flags, and cached files.
+    """
+    try:
+        doc_uuid = uuid.UUID(document_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid document UUID format.")
+        
+    doc_query = select(Document).where(Document.id == doc_uuid)
+    doc_result = await db.execute(doc_query)
+    doc = doc_result.scalars().first()
+    
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+        
+    # Delete cached local PDF file if present
+    try:
+        from app.api.v1.routers.documents import STORAGE_DIR
+        cached_path = os.path.join(STORAGE_DIR, f"{doc.id}.pdf")
+        if os.path.exists(cached_path):
+            os.remove(cached_path)
+    except Exception as e:
+        logger.warning("failed_to_delete_cached_pdf", error=str(e))
+        
+    await db.delete(doc)
+    await db.commit()
+    logger.info("document_deleted_successfully", doc_id=document_id)
+    return {"status": "success", "message": f"Document {document_id} deleted successfully."}

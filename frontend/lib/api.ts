@@ -89,3 +89,7 @@ export const approveDocument = async (documentId: string, reason: string) => {
   });
   return data;
 };
+
+export const deleteDocument = async (documentId: string): Promise<void> => {
+  await apiClient.delete(`/dashboard/documents/${documentId}`);
+};

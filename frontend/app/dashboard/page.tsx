@@ -1,14 +1,33 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { fetchDocuments } from "@/lib/api";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchDocuments, deleteDocument } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import UploadModal from "@/components/ui/upload-modal";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (docId: string, docName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${docName}" from the database?`)) {
+      return;
+    }
+    setDeletingId(docId);
+    try {
+      await deleteDocument(docId);
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+    } catch (err: any) {
+      alert("Failed to delete document: " + (err?.response?.data?.detail || err.message));
+    } finally {
+      setDeletingId(null);
+    }
+  };
   
   // React Query automatically handles loading states and caching
   const { data: documents, isLoading } = useQuery({
@@ -79,14 +98,26 @@ export default function DashboardPage() {
                     </Badge>
                   </td>
                   <td className="p-4 text-right">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => router.push(`/dashboard/review/${doc.id}`)}
-                      disabled={doc.status === "PENDING" || doc.status === "FAILED"}
-                    >
-                      {doc.status === "PENDING" ? "Processing..." : "Review"}
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => router.push(`/dashboard/review/${doc.id}`)}
+                        disabled={doc.status === "PENDING" || doc.status === "FAILED"}
+                      >
+                        {doc.status === "PENDING" ? "Processing..." : "Review"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 h-8 w-8 transition cursor-pointer"
+                        onClick={() => handleDelete(doc.id, doc.filename)}
+                        disabled={deletingId === doc.id}
+                        title="Delete document"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

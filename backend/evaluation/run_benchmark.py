@@ -66,7 +66,7 @@ async def run_benchmark():
         
         actual_truths.extend(doc.get("expected_flags", []))
         
-        # 3. Grade Generative Redlines using Gemini 3.8 Flash
+        # 3. Grade Generative Redlines using Gemini 3.5 Flash
         for truth in doc.get("expected_flags", []):
             if truth.get("requires_redline"):
                 # Find the matching AI flag
@@ -104,7 +104,7 @@ async def run_benchmark():
     
     # 6. Print Generative Scorecard
     print("\n========================================")
-    print("GENERATIVE REDLINE SCORECARD (Gemini 3.8 Flash Judge)")
+    print("GENERATIVE REDLINE SCORECARD (Gemini 3.5 Flash Judge)")
     print("========================================")
     print(f"Avg Risk Mitigation Score:   {avg_risk_mitigation:.1f} / 5.0")
     print(f"Avg Tone Preservation Score: {avg_preservation:.1f} / 5.0")

@@ -37,7 +37,7 @@ async def override_risk_flag(
         raise HTTPException(status_code=404, detail="Risk flag not found.")
         
     # 2. Capture AI State Snapshot for Compliance
-    # This freezes exactly what Gemini 3.8 Flash recommended at the time of review
+    # This freezes exactly what Gemini 3.5 Flash recommended at the time of review
     ai_snapshot = {
         "severity": flag.severity,
         "flag_reason": flag.flag_reason,

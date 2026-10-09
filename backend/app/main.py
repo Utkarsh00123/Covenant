@@ -82,9 +82,10 @@ app = get_application()
 
 # 5. Kept your original health check route exactly where it belongs
 @app.get("/healthz", tags=["System"])
-async def health_check():
+async def health_check(check_gemini: bool = False):
     """
-    Root endpoint to verify the API is running securely and report Gemini API key status.
+    Lightweight health check endpoint for Render load balancers and container orchestrators.
+    Returns HTTP 200 immediately to ensure zero deployment timeouts.
     """
     key = settings.GEMINI_API_KEY or ""
     key_diag = {
@@ -93,17 +94,18 @@ async def health_check():
         "prefix": key[:6] if key else "",
         "suffix": key[-4:] if key else "",
     }
-    gemini_diag = "untested"
-    try:
-        from google import genai
-        c = genai.Client(api_key=key)
-        resp = await c.aio.models.generate_content(
-            model="gemini-3.1-flash-lite",
-            contents="hello"
-        )
-        gemini_diag = "ok"
-    except Exception as e:
-        gemini_diag = f"error: {type(e).__name__} - {str(e)}"
+    gemini_diag = "skipped"
+    if check_gemini and key:
+        try:
+            from google import genai
+            c = genai.Client(api_key=key)
+            resp = await c.aio.models.generate_content(
+                model="gemini-3.1-flash-lite",
+                contents="hello"
+            )
+            gemini_diag = "ok"
+        except Exception as e:
+            gemini_diag = f"error: {type(e).__name__} - {str(e)}"
 
     return {
         "status": "online",

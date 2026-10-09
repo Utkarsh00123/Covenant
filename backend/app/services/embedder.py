@@ -28,6 +28,6 @@ async def generate_embedding(text: str, category: str = None, task_type: str = "
             from fastapi import HTTPException
             raise HTTPException(
                 status_code=429,
-                detail="Google Gemini API Quota Exhausted (429 RESOURCE_EXHAUSTED). You have exceeded your free tier daily quota for gemini-3.5-flash. Please retry when your quota resets."
+                detail="Google Gemini API Quota Exhausted (429 RESOURCE_EXHAUSTED). You have exceeded your free tier daily quota for gemini-3.1-flash-lite. Please retry when your quota resets."
             )
         raise RuntimeError(f"Failed to generate vector: {str(e)}")

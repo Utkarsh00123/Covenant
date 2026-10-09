@@ -44,7 +44,7 @@ async def evaluate_clause_risk(
     The core Hybrid Engine Orchestrator:
     1. Retrieves baseline clause via vector distance (MATCH_SIMILARITY_FLOOR = 0.40).
     2. Runs deterministic arithmetic checks against structured data & text regex.
-    3. Evaluates semantic deviation with Gemini 3.5 Flash if no deterministic rules fire.
+    3. Evaluates semantic deviation with Gemini 3.1 Flash Lite if no deterministic rules fire.
     4. Concurrently triggers surgical redline generation for all flagged risks.
     """
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
@@ -103,7 +103,7 @@ async def evaluate_clause_risk(
             reason=violation["reason"]
         )
         
-    # 3. Dynamic Semantic Deviation Evaluation (Gemini 3.5 Flash)
+    # 3. Dynamic Semantic Deviation Evaluation (Gemini 3.1 Flash Lite)
     # If no deterministic rules fired, ask Gemini to assess legal drift & policy compliance
     if not rule_violations:
         logger.info("initiating_semantic_deviation_check", 
@@ -128,7 +128,7 @@ async def evaluate_clause_risk(
         
         try:
             response = await client.aio.models.generate_content(
-                model='gemini-3.5-flash',
+                model='gemini-3.1-flash-lite',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
@@ -158,7 +158,7 @@ async def evaluate_clause_risk(
                     severity=severity,
                     flag_reason=reason,
                     similarity_score=similarity_score,
-                    ai_model_version="gemini-3.5-flash",
+                    ai_model_version="gemini-3.1-flash-lite",
                     evidence_text=extracted_clause.raw_text,
                     baseline_text=match_data["standard_text"]
                 )
@@ -176,7 +176,7 @@ async def evaluate_clause_risk(
                 from fastapi import HTTPException
                 raise HTTPException(
                     status_code=429,
-                    detail="Google Gemini API Quota Exhausted (Error 429: RESOURCE_EXHAUSTED). You have exceeded your free tier daily quota for gemini-3.5-flash. Please retry when your quota resets."
+                    detail="Google Gemini API Quota Exhausted (Error 429: RESOURCE_EXHAUSTED). You have exceeded your free tier daily quota for gemini-3.1-flash-lite. Please retry when your quota resets."
                 )
             # Safe fallback: if similarity is significantly different from baseline (<0.85), flag for review
             if similarity_score and similarity_score < 0.85:

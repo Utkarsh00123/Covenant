@@ -29,7 +29,7 @@ Grade the AI's redline strictly on the 1-5 scale requested in the schema.
 def _call_gemini_judge(user_content: str) -> dict:
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     response = client.models.generate_content(
-        model="gemini-3.5-flash",
+        model="gemini-3.1-flash-lite",
         contents=user_content,
         config=types.GenerateContentConfig(
             system_instruction=JUDGE_PROMPT,

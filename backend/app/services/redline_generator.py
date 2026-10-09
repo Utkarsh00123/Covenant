@@ -21,7 +21,7 @@ CRITICAL RULES:
 @retry(wait=wait_exponential(multiplier=1, min=2, max=10), stop=stop_after_attempt(3))
 async def generate_redline_for_flag(flag: RiskFlag) -> RiskFlag:
     """
-    Takes a RiskFlag, queries Gemini 3.5 Flash to generate a redline, computes the diff, 
+    Takes a RiskFlag, queries Gemini 3.1 Flash Lite to generate a redline, computes the diff, 
     and attaches the data back to the flag object.
     """
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
@@ -42,9 +42,9 @@ async def generate_redline_for_flag(flag: RiskFlag) -> RiskFlag:
     """
     
     try:
-        # We use gemini-3.5-flash for surgical text editing at massive scale
+        # We use gemini-3.1-flash-lite for surgical text editing at massive scale
         response = await client.aio.models.generate_content(
-            model="gemini-3.5-flash",
+            model="gemini-3.1-flash-lite",
             contents=user_prompt,
             config=types.GenerateContentConfig(
                 system_instruction=REDLINE_SYSTEM_PROMPT,

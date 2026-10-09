@@ -51,7 +51,7 @@ export default function QuotaModal({ open, onClose, errorDetail }: QuotaModalPro
         {/* Content Body */}
         <div className="space-y-3 text-sm text-slate-600 mb-6">
           <p className="leading-relaxed">
-            Your Google Gemini API free-tier daily quota has been reached for <strong className="text-slate-800">gemini-3.5-flash</strong>.
+            Your Google Gemini API free-tier daily quota has been reached for <strong className="text-slate-800">gemini-3.1-flash-lite</strong>.
           </p>
 
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 font-mono text-xs text-slate-700 break-words">
